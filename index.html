@@ -6,25 +6,25 @@
     <title>Ruleta Pro Final</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; }
-        .controls { background: #1e1e1e; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; margin: 0; overflow-x: hidden; }
+        .controls { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #333; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; z-index: 5; }
         #canvas-container { position: relative; display: flex; flex-direction: column; align-items: center; }
         .arrow { width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; margin-bottom: -10px; z-index: 10; }
-        canvas { border: 8px solid #222; border-radius: 50%; background: white; }
-        textarea { width: 90%; height: 80px; margin: 10px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; }
-        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        canvas { border: 8px solid #222; border-radius: 50%; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        textarea { width: 90%; height: 60px; margin: 10px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; resize: none; }
+        button { width: 100%; padding: 12px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; margin-top: 8px; }
         .btn-update { background: #444; color: #bbb; }
-        .btn-spin { background: #e67e22; color: white; font-size: 1.3em; box-shadow: 0 4px 0 #d35400; }
-        #resultado { margin-top: 20px; font-size: 1.5em; font-weight: bold; color: #f1c40f; text-align: center; height: 40px; }
+        .btn-spin { background: #e67e22; color: white; font-size: 1.2em; box-shadow: 0 4px 0 #d35400; }
+        #resultado { margin-top: 15px; font-size: 1.4em; font-weight: bold; color: #f1c40f; text-align: center; min-height: 35px; }
     </style>
 </head>
 <body>
-    <h1>🎡 Ruleta con Efectos Pro</h1>
+    <h1>🎡 Ruleta con Efectos Limpios</h1>
     <div class="controls">
         <textarea id="listaPremios">Pizza, Tacos, Sushi, Cine, Regalo, Viaje</textarea>
-        <button class="btn-update" onclick="actualizar()">Actualizar Ruleta</button>
+        <button class="btn-update" onclick="actualizar()">Actualizar Premios</button>
         <button class="btn-spin" id="spinBtn" onclick="verificarGiro()">GIRAR 🔐</button>
-        <div id="resultado">Introduce clave para jugar</div>
+        <div id="resultado">Esperando clave...</div>
     </div>
     <div id="canvas-container">
         <div class="arrow"></div>
@@ -40,29 +40,42 @@
         const colores = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#1abc9c", "#e67e22", "#34495e"];
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // Sonido de victoria (pitido triunfal)
         function sonidoVictoria() {
-            const notes = [523.25, 659.25, 783.99, 1046.50];
-            notes.forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const gn = audioCtx.createGain();
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
-                gn.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
-                gn.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.3);
-                osc.connect(gn); gn.connect(audioCtx.destination);
-                osc.start(audioCtx.currentTime + i * 0.1);
-                osc.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+            const notes = [523, 659, 783, 1046];
+            notes.forEach((f, i) => {
+                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.1);
+                g.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.3);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(audioCtx.currentTime + i * 0.1); o.stop(audioCtx.currentTime + i * 0.1 + 0.3);
             });
         }
 
-        function hablar(texto) {
+        function hablar(t) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Detener cualquier voz previa
-                const msg = new SpeechSynthesisUtterance(texto);
-                msg.lang = 'es-ES';
-                msg.rate = 1;
-                window.speechSynthesis.speak(msg);
+                window.speechSynthesis.cancel();
+                const m = new SpeechSynthesisUtterance(t);
+                m.lang = 'es-ES'; window.speechSynthesis.speak(m);
             }
+        }
+
+        // NUEVA FUNCIÓN DE CONFETI (Sin pantalla blanca)
+        function lanzarConfetiLimpio() {
+            const count = 200;
+            const defaults = { origin: { y: 0.7 }, zIndex: 999 };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 55 });
+            fire(0.2, { spread: 60 });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
         }
 
         function verificarGiro() {
@@ -96,7 +109,7 @@
         function iniciarGiro() {
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
-            document.getElementById('resultado').innerText = "🌀 ¡Mucha suerte!";
+            document.getElementById('resultado').innerText = "🌀 ¡Girando!";
             const extra = Math.random() * 5000 + 5000;
             const tiempo = 6000;
             const inicio = performance.now();
@@ -116,12 +129,10 @@
                     const ganador = premios[finalIdx];
                     document.getElementById('resultado').innerText = "🎉 ¡" + ganador + "!";
                     
-                    // EFECTOS FINALES
-                    if(typeof confetti === 'function') {
-                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                    }
+                    // EFECTOS MEJORADOS
+                    lanzarConfetiLimpio();
                     sonidoVictoria();
-                    hablar("¡Felicidades! El premio es " + ganador);
+                    hablar("¡Felicidades! Ganaste " + ganador);
                 }
             }
             requestAnimationFrame(animar);
