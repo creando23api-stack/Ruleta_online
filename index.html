@@ -4,35 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ruleta Pro Final</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; margin: 0; overflow-x: hidden; }
-        .controls { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #333; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; z-index: 5; }
-        #canvas-container { position: relative; display: flex; flex-direction: column; align-items: center; }
-        .arrow { width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; margin-bottom: -10px; z-index: 10; }
-        canvas { border: 8px solid #222; border-radius: 50%; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        textarea { width: 90%; height: 60px; margin: 10px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; resize: none; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; min-height: 100vh; overflow-x: hidden; }
+        .controls { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #333; width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; z-index: 10; position: relative; }
+        #canvas-container { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 5; }
+        .arrow { width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; margin-bottom: -10px; z-index: 15; }
+        canvas { border: 8px solid #222; border-radius: 50%; background: white; box-shadow: 0 0 30px rgba(0,0,0,0.5); max-width: 90vw; max-height: 90vw; }
+        textarea { width: 93%; height: 60px; margin: 10px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; resize: none; }
         button { width: 100%; padding: 12px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; margin-top: 8px; }
         .btn-update { background: #444; color: #bbb; }
         .btn-spin { background: #e67e22; color: white; font-size: 1.2em; box-shadow: 0 4px 0 #d35400; }
         #resultado { margin-top: 15px; font-size: 1.4em; font-weight: bold; color: #f1c40f; text-align: center; min-height: 35px; }
+        /* Estilo para las piezas de confeti */
+        .confetti { position: absolute; width: 10px; height: 10px; z-index: 20; pointer-events: none; }
     </style>
 </head>
 <body>
-    <h1>🎡 Ruleta con Efectos Limpios</h1>
     <div class="controls">
-        <textarea id="listaPremios">Pizza, Tacos, Sushi, Cine, Regalo, Viaje</textarea>
+        <textarea id="listaPremios">Premio 1, Premio 2, Premio 3, Premio 4, Premio 5</textarea>
         <button class="btn-update" onclick="actualizar()">Actualizar Premios</button>
-        <button class="btn-spin" id="spinBtn" onclick="verificarGiro()">GIRAR 🔐</button>
-        <div id="resultado">Esperando clave...</div>
+        <button class="btn-spin" id="spinBtn" onclick="verificarGiro()">¡GIRAR! 🔐</button>
+        <div id="resultado">Clave: premio</div>
     </div>
+    
     <div id="canvas-container">
         <div class="arrow"></div>
         <canvas id="ruleta" width="450" height="450"></canvas>
     </div>
 
     <script>
-        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x3a"];
+        const CLAVE_HEX = ["\x70\x72\x65\x6d\x69\x6f", "Introduce la clave maestra:"];
         const canvas = document.getElementById('ruleta');
         const ctx = canvas.getContext('2d');
         let premios = [];
@@ -60,27 +61,35 @@
             }
         }
 
-        // NUEVA FUNCIÓN DE CONFETI (Sin pantalla blanca)
-        function lanzarConfetiLimpio() {
-            const count = 200;
-            const defaults = { origin: { y: 0.7 }, zIndex: 999 };
+        // Sistema de confeti propio (sin librerías que tapen la pantalla)
+        function explosionConfeti() {
+            const container = document.getElementById('canvas-container');
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                confetti.style.left = '50%';
+                confetti.style.top = '50%';
+                container.appendChild(confetti);
 
-            function fire(particleRatio, opts) {
-                confetti(Object.assign({}, defaults, opts, {
-                    particleCount: Math.floor(count * particleRatio)
-                }));
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 5 + Math.random() * 10;
+                const x = Math.cos(angle) * 200 * Math.random();
+                const y = Math.sin(angle) * 200 * Math.random();
+
+                confetti.animate([
+                    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                    { transform: `translate(${x}px, ${y}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 1000 + Math.random() * 1000,
+                    easing: 'ease-out'
+                }).onfinish = () => confetti.remove();
             }
-
-            fire(0.25, { spread: 26, startVelocity: 55 });
-            fire(0.2, { spread: 60 });
-            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-            fire(0.1, { spread: 120, startVelocity: 45 });
         }
 
         function verificarGiro() {
-            const p = prompt(_0x1a2b[1]);
-            if (p === _0x1a2b[0]) {
+            const p = prompt(CLAVE_HEX[1]);
+            if (p === CLAVE_HEX[0]) {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 iniciarGiro();
             } else { alert("Clave incorrecta"); }
@@ -99,10 +108,10 @@
                 const ang = i * a + o;
                 ctx.beginPath(); ctx.fillStyle = colores[i % colores.length];
                 ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, ang, ang + a); ctx.fill();
-                ctx.strokeStyle = "#222"; ctx.stroke();
+                ctx.strokeStyle = "#222"; ctx.lineWidth = 2; ctx.stroke();
                 ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang + a / 2);
                 ctx.textAlign = "right"; ctx.fillStyle = "white";
-                ctx.font = "bold 15px Arial"; ctx.fillText(p, r - 30, 5); ctx.restore();
+                ctx.font = "bold 16px Arial"; ctx.fillText(p, r - 30, 5); ctx.restore();
             });
         }
 
@@ -111,7 +120,7 @@
             btn.disabled = true;
             document.getElementById('resultado').innerText = "🌀 ¡Girando!";
             const extra = Math.random() * 5000 + 5000;
-            const tiempo = 6000;
+            const tiempo = 5000;
             const inicio = performance.now();
 
             function animar(ahora) {
@@ -129,10 +138,9 @@
                     const ganador = premios[finalIdx];
                     document.getElementById('resultado').innerText = "🎉 ¡" + ganador + "!";
                     
-                    // EFECTOS MEJORADOS
-                    lanzarConfetiLimpio();
+                    explosionConfeti();
                     sonidoVictoria();
-                    hablar("¡Felicidades! Ganaste " + ganador);
+                    hablar("Felicidades, ganaste " + ganador);
                 }
             }
             requestAnimationFrame(animar);
