@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta Privada</title>
+    <title>Ruleta Privada Segura</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; }
         .main-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; margin-top: 20px; }
@@ -14,10 +14,9 @@
         textarea { width: 100%; height: 120px; margin: 15px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; font-size: 14px; resize: none; outline: none; }
         button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; transition: 0.2s; }
         .btn-update { background: #444; color: #bbb; margin-bottom: 10px; border: 1px solid #555; }
-        .btn-update:hover { background: #555; color: white; }
         .btn-spin { background: #e67e22; color: white; font-size: 1.3em; box-shadow: 0 4px 0 #d35400; }
         .btn-spin:active { transform: translateY(2px); box-shadow: 0 2px 0 #d35400; }
-        #resultado { margin-top: 20px; font-size: 1.5em; font-weight: bold; color: #f1c40f; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #resultado { margin-top: 20px; font-size: 1.5em; font-weight: bold; color: #f1c40f; text-align: center; }
     </style>
 </head>
 <body>
@@ -38,12 +37,9 @@
     </div>
 
     <script>
-        /** * Lógica de seguridad ofuscada. 
-         * La clave está codificada para evitar lectura simple.
-         */
-        const _0x4b21=["\x70\x72\x65\x6d\x69\x6f","\x76\x61\x6c\x75\x65","\x6c\x69\x73\x74\x61\x50\x72\x65\x6d\x69\x6f\x73","\x67\x65\x74\x45\x6c\x65\x6d\x65\x6e\x74\x42\x79\x49\x64","\x73\x70\x6c\x69\x74","\x6d\x61\x70","\x74\x72\x69\x6d","\x66\x69\x6c\x74\x65\x72","\x70\x72\x6f\x6d\x70\x74","\x43\x6c\x61\x76\x65\x20\x64\x65\x20\x61\x63\x63\x65\x73\x6f\x3a"];
-        const K = _0x4b21[0]; 
-
+        // Clave "premio" ofuscada
+        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x20\x6d\x61\x65\x73\x74\x72\x61\x3a"];
+        
         const canvas = document.getElementById('ruleta');
         const ctx = canvas.getContext('2d');
         let premios = [];
@@ -60,13 +56,18 @@
             o.start(); o.stop(audioCtx.currentTime + 0.05);
         }
 
+        // ESTA FUNCIÓN ES LA QUE BLOQUEA EL GIRO
         function verificarGiro() {
-            const p = prompt(_0x4b21[9]);
-            if (p === K) { iniciarGiro(); } else { alert("❌ Clave incorrecta"); }
+            const intento = prompt(_0x1a2b[1]);
+            if (intento === _0x1a2b[0]) {
+                iniciarGiro();
+            } else {
+                alert("❌ Clave incorrecta. Solo el administrador puede girar.");
+            }
         }
 
         function actualizar() {
-            premios = document.getElementById(_0x4b21[2])[_0x4b21[1]][_0x4b21[4]](',')[_0x4b21[5]](x => x[_0x4b21[6]]())[_0x4b21[7]](x => x !== "");
+            premios = document.getElementById('listaPremios').value.split(',').map(p => p.trim()).filter(p => p !== "");
             dibujar();
         }
 
@@ -88,11 +89,14 @@
         function iniciarGiro() {
             if (premios.length < 2) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const btn = document.getElementById('spinBtn'); btn.disabled = true;
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
             document.getElementById('resultado').innerText = "🌀 ¡Girando!";
             const extra = Math.random() * 5000 + 5000;
-            const tiempo = 6000; const inicio = performance.now();
+            const tiempo = 6000;
+            const inicio = performance.now();
             let ultimoTick = -1;
+
             function animar(ahora) {
                 let progreso = (ahora - inicio) / tiempo;
                 if (progreso > 1) progreso = 1;
@@ -103,9 +107,10 @@
                 const ind = Math.floor((angTotal % (2 * Math.PI)) / ((2 * Math.PI)/n));
                 if (ind !== ultimoTick) { playTick(); ultimoTick = ind; }
                 if (progreso < 1) { requestAnimationFrame(animar); } else {
-                    anguloActual = angTotal % (2 * Math.PI); btn.disabled = false;
+                    anguloActual = angTotal % (2 * Math.PI);
+                    btn.disabled = false;
                     const final = Math.floor((2 * Math.PI - (anguloActual % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
-                    document.getElementById('resultado').innerText = "🎉 RESULTADO: " + premios[final];
+                    document.getElementById('resultado').innerText = "🎉 GANASTE: " + premios[final];
                 }
             }
             requestAnimationFrame(animar);
