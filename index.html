@@ -42,7 +42,6 @@
     </div>
 
     <script>
-        // Clave ofuscada ("premio")
         const _0x4f2a = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x3a"];
         
         const firebaseConfig = {
@@ -80,16 +79,20 @@
             window.speechSynthesis.speak(m);
         }
 
-        // Sincronización Maestra: Todos escuchan el mismo Ángulo Final
+        // --- ESCUCHAR CAMBIOS EN TIEMPO REAL ---
         db.ref('ruleta').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.premios) {
                 premios = data.premios;
+                
                 if (data.estado === 'girando' && data.trigger !== window.lastTrigger) {
                     window.lastTrigger = data.trigger;
                     ejecutarGiro(data.anguloFinal, data.timestamp);
-                } else if (data.estado === 'parado') {
+                } 
+                else if (data.estado === 'parado') {
+                    // Si el estado es parado, reseteamos el texto y dibujamos la ruleta
                     anguloActual = data.anguloFinal || 0;
+                    document.getElementById('resultado').innerText = "Lista actualizada";
                     dibujar(anguloActual);
                 }
             }
@@ -97,19 +100,25 @@
 
         function actualizarDB() {
             const p = document.getElementById('listaPremios').value.split(',').map(x => x.trim()).filter(x => x !== "");
-            db.ref('ruleta').set({ premios: p, estado: 'parado', anguloFinal: 0 });
-            alert("Lista actualizada para todos.");
+            if (p.length === 0) return alert("Escribe algunos premios");
+
+            // Enviamos 'parado' y anguloFinal 0 para que todos los dispositivos reseteen su vista
+            db.ref('ruleta').set({ 
+                premios: p, 
+                estado: 'parado', 
+                anguloFinal: 0,
+                timestamp: Date.now() 
+            });
         }
 
         function lanzarGiroSincronizado() {
             if (prompt(_0x4f2a[1]) === _0x4f2a[0]) {
-                // El que presiona el botón decide el destino para TODOS
                 const vueltasExtras = (Math.floor(Math.random() * 5) + 5) * 2 * Math.PI;
                 const anguloDestino = Math.random() * 2 * Math.PI + vueltasExtras;
                 
                 db.ref('ruleta').update({
                     estado: 'girando',
-                    anguloFinal: anguloDestino, // Este ángulo es el mismo para todos
+                    anguloFinal: anguloDestino,
                     trigger: Math.random().toString(36),
                     timestamp: Date.now()
                 });
@@ -140,26 +149,19 @@
             function animar() {
                 let progreso = (Date.now() - inicioT) / duracion;
                 if (progreso > 1) progreso = 1;
-                
-                // Efecto de frenado suave
                 const suavizado = 1 - Math.pow(1 - progreso, 4);
                 const angMostrado = inicioAngulo + (anguloMeta * suavizado);
                 dibujar(angMostrado);
 
-                // Sonido de clic
                 const ind = Math.floor((angMostrado % (2 * Math.PI)) / ((2 * Math.PI)/premios.length));
                 if (ind !== ultimoTick) { playTick(); ultimoTick = ind; }
 
                 if (progreso < 1) {
                     requestAnimationFrame(animar);
                 } else {
-                    // Cálculo del ganador idéntico en todos los dispositivos
                     const anguloFinalRelativo = angMostrado % (2 * Math.PI);
                     const n = premios.length;
-                    const sectorv = (2 * Math.PI) / n;
-                    // Ajuste de desfase para la flecha superior (1.5 * PI)
-                    const idx = Math.floor((2 * Math.PI - (anguloFinalRelativo % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / sectorv);
-                    
+                    const idx = Math.floor((2 * Math.PI - (anguloFinalRelativo % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
                     const ganador = premios[idx];
                     document.getElementById('resultado').innerText = "🏆 ¡GANADOR: " + ganador + "!";
                     hablar("El ganador es " + ganador);
