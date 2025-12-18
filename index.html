@@ -3,82 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta Premium</title>
+    <title>Ruleta Pro Final</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; overflow-x: hidden; }
-        .main-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; margin-top: 20px; }
-        .controls { background: #1e1e1e; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        #canvas-container { position: relative; }
-        .arrow { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; z-index: 10; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; }
+        .controls { background: #1e1e1e; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        #canvas-container { position: relative; display: flex; flex-direction: column; align-items: center; }
+        .arrow { width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; margin-bottom: -10px; z-index: 10; }
         canvas { border: 8px solid #222; border-radius: 50%; background: white; }
-        textarea { width: 100%; height: 120px; margin: 15px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; font-size: 14px; resize: none; outline: none; }
-        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; transition: 0.2s; }
-        .btn-update { background: #444; color: #bbb; margin-bottom: 10px; border: 1px solid #555; }
+        textarea { width: 90%; height: 80px; margin: 10px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; }
+        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        .btn-update { background: #444; color: #bbb; }
         .btn-spin { background: #e67e22; color: white; font-size: 1.3em; box-shadow: 0 4px 0 #d35400; }
-        .btn-spin:active { transform: translateY(2px); box-shadow: 0 2px 0 #d35400; }
-        #resultado { margin-top: 20px; font-size: 1.5em; font-weight: bold; color: #f1c40f; text-align: center; }
+        #resultado { margin-top: 20px; font-size: 1.5em; font-weight: bold; color: #f1c40f; text-align: center; height: 40px; }
     </style>
 </head>
 <body>
-    <h1>🎡 Ruleta online</h1>
-    <div class="main-container">
-        <div class="controls">
-            <h3>📝 Premios</h3>
-            <textarea id="listaPremios">Pizza, Tacos, Sushi, Cine, Regalo, Helado</textarea>
-            <button class="btn-update" onclick="actualizar()">Actualizar Ruleta</button>
-            <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
-            <button class="btn-spin" id="spinBtn" onclick="verificarGiro()">GIRAR 🔐</button>
-            <div id="resultado">Introduce clave para girar</div>
-        </div>
-        <div id="canvas-container">
-            <div class="arrow"></div>
-            <canvas id="ruleta" width="450" height="450"></canvas>
-        </div>
+    <h1>🎡 Ruleta con Efectos Pro</h1>
+    <div class="controls">
+        <textarea id="listaPremios">Pizza, Tacos, Sushi, Cine, Regalo, Viaje</textarea>
+        <button class="btn-update" onclick="actualizar()">Actualizar Ruleta</button>
+        <button class="btn-spin" id="spinBtn" onclick="verificarGiro()">GIRAR 🔐</button>
+        <div id="resultado">Introduce clave para jugar</div>
+    </div>
+    <div id="canvas-container">
+        <div class="arrow"></div>
+        <canvas id="ruleta" width="450" height="450"></canvas>
     </div>
 
     <script>
-        // Clave "premio" protegida
-        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x20\x64\x65\x20\x61\x64\x6d\x69\x6e\x69\x73\x74\x72\x61\x64\x6f\x72\x3a"];
-        
+        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x3a"];
         const canvas = document.getElementById('ruleta');
         const ctx = canvas.getContext('2d');
         let premios = [];
         let anguloActual = 0;
         const colores = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#1abc9c", "#e67e22", "#34495e"];
-        
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function playTick() {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = 'sine'; o.frequency.setValueAtTime(500, audioCtx.currentTime);
-            g.gain.setValueAtTime(0.04, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-            o.connect(g); g.connect(audioCtx.destination);
-            o.start(); o.stop(audioCtx.currentTime + 0.05);
-        }
-
-        // Función para que la computadora hable
-        function hablar(texto) {
-            const mensaje = new SpeechSynthesisUtterance(texto);
-            mensaje.lang = 'es-ES';
-            mensaje.rate = 1;
-            window.speechSynthesis.speak(mensaje);
-        }
-
-        function lanzarConfeti() {
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#f1c40f', '#e67e22', '#2ecc71', '#3498db', '#ffffff']
+        // Sonido de victoria (pitido triunfal)
+        function sonidoVictoria() {
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gn = audioCtx.createGain();
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                gn.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
+                gn.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.3);
+                osc.connect(gn); gn.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + i * 0.1);
+                osc.stop(audioCtx.currentTime + i * 0.1 + 0.3);
             });
+        }
+
+        function hablar(texto) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Detener cualquier voz previa
+                const msg = new SpeechSynthesisUtterance(texto);
+                msg.lang = 'es-ES';
+                msg.rate = 1;
+                window.speechSynthesis.speak(msg);
+            }
         }
 
         function verificarGiro() {
             const p = prompt(_0x1a2b[1]);
-            if (p === _0x1a2b[0]) { iniciarGiro(); } 
-            else { alert("❌ Clave incorrecta"); }
+            if (p === _0x1a2b[0]) {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                iniciarGiro();
+            } else { alert("Clave incorrecta"); }
         }
 
         function actualizar() {
@@ -102,16 +94,12 @@
         }
 
         function iniciarGiro() {
-            if (premios.length < 2) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
-            document.getElementById('resultado').innerText = "🌀 ¡Girando!";
-            
+            document.getElementById('resultado').innerText = "🌀 ¡Mucha suerte!";
             const extra = Math.random() * 5000 + 5000;
             const tiempo = 6000;
             const inicio = performance.now();
-            let ultimoTick = -1;
 
             function animar(ahora) {
                 let progreso = (ahora - inicio) / tiempo;
@@ -119,23 +107,21 @@
                 const easeOut = 1 - Math.pow(1 - progreso, 4);
                 const angTotal = anguloActual + extra * easeOut;
                 dibujar(angTotal);
-                const n = premios.length;
-                const ind = Math.floor((angTotal % (2 * Math.PI)) / ((2 * Math.PI)/n));
-                if (ind !== ultimoTick) { playTick(); ultimoTick = ind; }
-
-                if (progreso < 1) {
-                    requestAnimationFrame(animar);
-                } else {
+                if (progreso < 1) { requestAnimationFrame(animar); } 
+                else {
                     anguloActual = angTotal % (2 * Math.PI);
                     btn.disabled = false;
+                    const n = premios.length;
                     const finalIdx = Math.floor((2 * Math.PI - (anguloActual % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
                     const ganador = premios[finalIdx];
+                    document.getElementById('resultado').innerText = "🎉 ¡" + ganador + "!";
                     
-                    document.getElementById('resultado').innerText = "🎉 ¡GANASTE: " + ganador + "!";
-                    
-                    // Acción final: Voz y Confeti
-                    hablar("¡Ganaste " + ganador + "!");
-                    lanzarConfeti();
+                    // EFECTOS FINALES
+                    if(typeof confetti === 'function') {
+                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                    }
+                    sonidoVictoria();
+                    hablar("¡Felicidades! El premio es " + ganador);
                 }
             }
             requestAnimationFrame(animar);
