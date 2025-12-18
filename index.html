@@ -3,73 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta Online Sincronizada PRO</title>
+    <title>Ruleta Sincronizada Total</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background-color: #121212; 
-            color: #e0e0e0; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            min-height: 100vh; 
-        }
-        .header-title { 
-            font-size: 2.5em; 
-            color: #f1c40f; 
-            font-weight: 800; 
-            margin: 20px 0; 
-            text-transform: uppercase; 
-            letter-spacing: 2px;
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .header-title { font-size: 2.5em; color: #f1c40f; font-weight: 800; margin: 20px 0; text-transform: uppercase; }
         .wrapper { display: flex; flex-direction: row; align-items: center; gap: 40px; padding: 20px; }
-        
-        .controls { 
-            background: #1e1e1e; padding: 25px; border-radius: 20px; 
-            border: 1px solid #333; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-        }
-        
+        .controls { background: #1e1e1e; padding: 25px; border-radius: 20px; border: 1px solid #333; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #canvas-container { position: relative; display: flex; flex-direction: column; align-items: center; }
-        .arrow { 
-            width: 0; height: 0; 
-            border-left: 20px solid transparent; 
-            border-right: 20px solid transparent; 
-            border-top: 40px solid #ff4757; 
-            margin-bottom: -10px; 
-            z-index: 20; 
-        }
-        canvas { 
-            border: 10px solid #222; 
-            border-radius: 50%; 
-            background: white; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.7); 
-            width: 450px; height: 450px; 
-        }
-        
-        textarea { width: 92%; height: 100px; margin: 10px 0; border-radius: 10px; border: none; padding: 10px; background: #333; color: white; resize: none; font-size: 14px; }
-        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; font-size: 16px; transition: 0.3s; }
-        .btn-update { background: #444; color: #bbb; }
+        .arrow { width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; margin-bottom: -10px; z-index: 20; }
+        canvas { border: 10px solid #222; border-radius: 50%; background: white; width: 450px; height: 450px; }
+        textarea { width: 92%; height: 100px; margin: 10px 0; border-radius: 10px; border: none; padding: 10px; background: #333; color: white; resize: none; }
+        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; font-size: 16px; }
         .btn-spin { background: #e67e22; color: white; font-size: 1.3em; box-shadow: 0 5px 0 #d35400; }
-        .btn-spin:active { transform: translateY(4px); box-shadow: 0 1px 0 #d35400; }
-        
-        #resultado { 
-            margin-top: 20px; 
-            font-size: 1.8em; 
-            font-weight: bold; 
-            color: #f1c40f; 
-            text-align: center; 
-            min-height: 50px;
-        }
-
-        @media (max-width: 900px) { 
-            .wrapper { flex-direction: column; } 
-            .controls { width: 90%; }
-            canvas { width: 320px; height: 320px; }
-        }
+        #resultado { margin-top: 20px; font-size: 1.8em; font-weight: bold; color: #f1c40f; text-align: center; }
+        @media (max-width: 900px) { .wrapper { flex-direction: column; } .controls { width: 90%; } canvas { width: 300px; height: 300px; } }
     </style>
 </head>
 <body>
@@ -78,12 +27,12 @@
 
     <div class="wrapper">
         <div class="controls" id="adminPanel">
-            <h3 style="margin:0; text-align: center;">⚙️ Ajustes</h3>
-            <textarea id="listaPremios">Pizza, Tacos, Sushi, Cine, Regalo, Helado</textarea>
-            <button class="btn-update" onclick="actualizarDB()">Sincronizar Premios</button>
+            <h3 style="text-align:center">⚙️ Administrador</h3>
+            <textarea id="listaPremios">Premio 1, Premio 2, Premio 3, Premio 4</textarea>
+            <button onclick="actualizarDB()">Sincronizar Lista</button>
             <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
             <button class="btn-spin" id="spinBtn" onclick="lanzarGiroSincronizado()">¡GIRAR PARA TODOS! 🔐</button>
-            <div id="resultado">Esperando acción...</div>
+            <div id="resultado">Listos</div>
         </div>
 
         <div id="canvas-container">
@@ -93,10 +42,9 @@
     </div>
 
     <script>
-        // CLAVE OFUSCADA (corresponde a "premio")
-        const _0x4f2a = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x20\x64\x65\x20\x61\x63\x63\x65\x73\x6f\x3a"];
-
-        // CONFIGURACIÓN DE TU FIREBASE
+        const _0x4f2a = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x3a"];
+        
+        // --- TU CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAbYrsLfCMc8fogIqwFvxKCWltzmWXyTUw",
             authDomain: "ruletaenvivo.firebaseapp.com",
@@ -109,19 +57,17 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
         const canvas = document.getElementById('ruleta');
         const ctx = canvas.getContext('2d');
         let premios = [];
         let anguloActual = 0;
         const colores = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#1abc9c", "#e67e22"];
-        
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playTick() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = 'sine'; o.frequency.setValueAtTime(500, audioCtx.currentTime);
+            o.frequency.setValueAtTime(500, audioCtx.currentTime);
             g.gain.setValueAtTime(0.08, audioCtx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
             o.connect(g); g.connect(audioCtx.destination);
@@ -130,55 +76,39 @@
 
         function hablar(t) {
             window.speechSynthesis.cancel();
-            const m = new SpeechSynthesisUtterance(t);
-            m.lang = 'es-ES';
+            const m = new SpeechSynthesisUtterance(t); m.lang = 'es-ES';
             window.speechSynthesis.speak(m);
         }
 
-        // ESCUCHAR CAMBIOS EN TIEMPO REAL
         db.ref('ruleta').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.premios) {
                 premios = data.premios;
-                if (data.estado !== 'girando') {
+                if (data.estado === 'girando' && data.trigger !== window.lastTrigger) {
+                    window.lastTrigger = data.trigger;
+                    ejecutarGiro(data.anguloFinal, data.timestamp);
+                } else if (data.estado === 'parado') {
                     anguloActual = data.anguloFinal || 0;
                     dibujar(anguloActual);
                 }
-                if (data.estado === 'girando' && data.trigger !== window.lastTrigger) {
-                    window.lastTrigger = data.trigger;
-                    if (audioCtx.state === 'suspended') audioCtx.resume();
-                    ejecutarGiroVistoPorTodos(data.fuerza, data.timestamp);
-                }
-            } else {
-                premios = ["Pizza", "Tacos", "Sushi", "Cine"];
-                dibujar(0);
             }
         });
 
         function actualizarDB() {
             const p = document.getElementById('listaPremios').value.split(',').map(x => x.trim()).filter(x => x !== "");
-            db.ref('ruleta').set({
-                premios: p,
-                estado: 'parado',
-                anguloFinal: 0,
-                timestamp: Date.now()
-            });
-            alert("✅ Sincronizado con éxito.");
+            db.ref('ruleta').set({ premios: p, estado: 'parado', anguloFinal: 0 });
         }
 
         function lanzarGiroSincronizado() {
-            const p = prompt(_0x4f2a[1]);
-            if (p === _0x4f2a[0]) {
-                const fuerza = Math.random() * 5000 + 5000;
-                const triggerId = Math.random().toString(36);
+            if (prompt(_0x4f2a[1]) === _0x4f2a[0]) {
+                const vueltasBase = (Math.floor(Math.random() * 5) + 5) * 2 * Math.PI;
+                const anguloMeta = Math.random() * 2 * Math.PI + vueltasBase;
                 db.ref('ruleta').update({
                     estado: 'girando',
-                    fuerza: fuerza,
-                    trigger: triggerId,
+                    anguloFinal: anguloMeta,
+                    trigger: Math.random().toString(36),
                     timestamp: Date.now()
                 });
-            } else {
-                alert("Acceso denegado");
             }
         }
 
@@ -190,45 +120,36 @@
                 const ang = i * a + o;
                 ctx.beginPath(); ctx.fillStyle = colores[i % colores.length];
                 ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, ang, ang + a); ctx.fill();
-                ctx.strokeStyle = "#111"; ctx.lineWidth = 2; ctx.stroke();
                 ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang + a / 2);
-                ctx.textAlign = "right"; ctx.fillStyle = "white";
-                ctx.font = "bold 16px Arial"; ctx.fillText(p, r - 30, 5); ctx.restore();
+                ctx.textAlign = "right"; ctx.fillStyle = "white"; ctx.font = "bold 16px Arial";
+                ctx.fillText(p, r - 30, 5); ctx.restore();
             });
         }
 
-        function ejecutarGiroVistoPorTodos(fuerza, inicioTiempo) {
+        function ejecutarGiro(anguloMeta, inicioT) {
             const duracion = 5000;
-            const btn = document.getElementById('spinBtn');
-            btn.disabled = true;
             let ultimoTick = -1;
-            document.getElementById('resultado').innerText = "🎰 ¡Girando en vivo!";
+            document.getElementById('resultado').innerText = "🎰 ¡Girando!";
 
             function animar() {
-                let progreso = (Date.now() - inicioTiempo) / duracion;
+                let progreso = (Date.now() - inicioT) / duracion;
                 if (progreso > 1) progreso = 1;
                 const suavizado = 1 - Math.pow(1 - progreso, 4);
-                const angTotal = anguloActual + fuerza * suavizado;
-                dibujar(angTotal);
+                const angMostrado = anguloActual + (anguloMeta * suavizado);
+                dibujar(angMostrado);
 
-                const n = premios.length;
-                const ind = Math.floor((angTotal % (2 * Math.PI)) / ((2 * Math.PI)/n));
+                const ind = Math.floor((angMostrado % (2 * Math.PI)) / ((2 * Math.PI)/premios.length));
                 if (ind !== ultimoTick) { playTick(); ultimoTick = ind; }
 
-                if (progreso < 1) { 
-                    requestAnimationFrame(animar); 
-                } else {
-                    const anguloFinal = angTotal % (2 * Math.PI);
-                    btn.disabled = false;
-                    const finalIdx = Math.floor((2 * Math.PI - (anguloFinal % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
-                    const ganador = premios[finalIdx];
-                    
-                    document.getElementById('resultado').innerHTML = "🏆 ¡GANADOR: " + ganador + "!";
+                if (progreso < 1) requestAnimationFrame(animar);
+                else {
+                    const final = angMostrado % (2 * Math.PI);
+                    const n = premios.length;
+                    const idx = Math.floor((2 * Math.PI - (final % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
+                    const ganador = premios[idx];
+                    document.getElementById('resultado').innerText = "🏆 ¡GANADOR: " + ganador + "!";
                     hablar("El ganador es " + ganador);
-                    
-                    if (document.getElementById('adminPanel')) {
-                        db.ref('ruleta').update({ estado: 'parado', anguloFinal: anguloFinal });
-                    }
+                    anguloActual = final;
                 }
             }
             animar();
