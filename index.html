@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta Privada Segura</title>
+    <title>Ruleta Premium</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; overflow-x: hidden; }
         .main-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; margin-top: 20px; }
         .controls { background: #1e1e1e; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         #canvas-container { position: relative; }
@@ -28,7 +29,7 @@
             <button class="btn-update" onclick="actualizar()">Actualizar Ruleta</button>
             <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
             <button class="btn-spin" id="spinBtn" onclick="verificarGiro()">GIRAR 🔐</button>
-            <div id="resultado">Introduce la clave para girar</div>
+            <div id="resultado">Introduce clave para girar</div>
         </div>
         <div id="canvas-container">
             <div class="arrow"></div>
@@ -37,8 +38,8 @@
     </div>
 
     <script>
-        // Clave "premio" ofuscada
-        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x20\x6d\x61\x65\x73\x74\x72\x61\x3a"];
+        // Clave "premio" protegida
+        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x20\x64\x65\x20\x61\x64\x6d\x69\x6e\x69\x73\x74\x72\x61\x64\x6f\x72\x3a"];
         
         const canvas = document.getElementById('ruleta');
         const ctx = canvas.getContext('2d');
@@ -47,6 +48,7 @@
         const colores = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#1abc9c", "#e67e22", "#34495e"];
         
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
         function playTick() {
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
             o.type = 'sine'; o.frequency.setValueAtTime(500, audioCtx.currentTime);
@@ -56,14 +58,27 @@
             o.start(); o.stop(audioCtx.currentTime + 0.05);
         }
 
-        // ESTA FUNCIÓN ES LA QUE BLOQUEA EL GIRO
+        // Función para que la computadora hable
+        function hablar(texto) {
+            const mensaje = new SpeechSynthesisUtterance(texto);
+            mensaje.lang = 'es-ES';
+            mensaje.rate = 1;
+            window.speechSynthesis.speak(mensaje);
+        }
+
+        function lanzarConfeti() {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#f1c40f', '#e67e22', '#2ecc71', '#3498db', '#ffffff']
+            });
+        }
+
         function verificarGiro() {
-            const intento = prompt(_0x1a2b[1]);
-            if (intento === _0x1a2b[0]) {
-                iniciarGiro();
-            } else {
-                alert("❌ Clave incorrecta. Solo el administrador puede girar.");
-            }
+            const p = prompt(_0x1a2b[1]);
+            if (p === _0x1a2b[0]) { iniciarGiro(); } 
+            else { alert("❌ Clave incorrecta"); }
         }
 
         function actualizar() {
@@ -92,6 +107,7 @@
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
             document.getElementById('resultado').innerText = "🌀 ¡Girando!";
+            
             const extra = Math.random() * 5000 + 5000;
             const tiempo = 6000;
             const inicio = performance.now();
@@ -106,11 +122,20 @@
                 const n = premios.length;
                 const ind = Math.floor((angTotal % (2 * Math.PI)) / ((2 * Math.PI)/n));
                 if (ind !== ultimoTick) { playTick(); ultimoTick = ind; }
-                if (progreso < 1) { requestAnimationFrame(animar); } else {
+
+                if (progreso < 1) {
+                    requestAnimationFrame(animar);
+                } else {
                     anguloActual = angTotal % (2 * Math.PI);
                     btn.disabled = false;
-                    const final = Math.floor((2 * Math.PI - (anguloActual % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
-                    document.getElementById('resultado').innerText = "🎉 GANASTE: " + premios[final];
+                    const finalIdx = Math.floor((2 * Math.PI - (anguloActual % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
+                    const ganador = premios[finalIdx];
+                    
+                    document.getElementById('resultado').innerText = "🎉 ¡GANASTE: " + ganador + "!";
+                    
+                    // Acción final: Voz y Confeti
+                    hablar("¡Ganaste " + ganador + "!");
+                    lanzarConfeti();
                 }
             }
             requestAnimationFrame(animar);
