@@ -15,10 +15,10 @@
         .arrow { width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; margin-bottom: -10px; z-index: 20; }
         canvas { border: 10px solid #222; border-radius: 50%; background: white; width: 450px; height: 450px; }
         textarea { width: 92%; height: 100px; margin: 10px 0; border-radius: 10px; border: none; padding: 10px; background: #333; color: white; resize: none; }
-        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; font-size: 16px; }
+        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; font-size: 16px; transition: 0.3s; }
         .btn-spin { background: #e67e22; color: white; font-size: 1.3em; box-shadow: 0 5px 0 #d35400; }
-        #resultado { margin-top: 20px; font-size: 1.8em; font-weight: bold; color: #f1c40f; text-align: center; }
-        @media (max-width: 900px) { .wrapper { flex-direction: column; } .controls { width: 90%; } canvas { width: 300px; height: 300px; } }
+        #resultado { margin-top: 20px; font-size: 1.8em; font-weight: bold; color: #f1c40f; text-align: center; min-height: 50px; }
+        @media (max-width: 900px) { .wrapper { flex-direction: column; } .controls { width: 90%; } canvas { width: 320px; height: 320px; } }
     </style>
 </head>
 <body>
@@ -27,12 +27,12 @@
 
     <div class="wrapper">
         <div class="controls" id="adminPanel">
-            <h3 style="text-align:center">⚙️ Administrador</h3>
-            <textarea id="listaPremios">Premio 1, Premio 2, Premio 3, Premio 4</textarea>
+            <h3 style="text-align:center">⚙️ Ajustes</h3>
+            <textarea id="listaPremios">Premio 1, Premio 2, Premio 3, Premio 4, Premio 5</textarea>
             <button onclick="actualizarDB()">Sincronizar Lista</button>
             <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
-            <button class="btn-spin" id="spinBtn" onclick="lanzarGiroSincronizado()">¡GIRAR PARA TODOS! 🔐</button>
-            <div id="resultado">Listos</div>
+            <button class="btn-spin" id="spinBtn" onclick="lanzarGiroSincronizado()">¡GIRAR! 🔐</button>
+            <div id="resultado">Esperando...</div>
         </div>
 
         <div id="canvas-container">
@@ -42,9 +42,9 @@
     </div>
 
     <script>
+        // Clave ofuscada ("premio")
         const _0x4f2a = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x3a"];
         
-        // --- TU CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAbYrsLfCMc8fogIqwFvxKCWltzmWXyTUw",
             authDomain: "ruletaenvivo.firebaseapp.com",
@@ -80,6 +80,7 @@
             window.speechSynthesis.speak(m);
         }
 
+        // Sincronización Maestra: Todos escuchan el mismo Ángulo Final
         db.ref('ruleta').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.premios) {
@@ -97,18 +98,23 @@
         function actualizarDB() {
             const p = document.getElementById('listaPremios').value.split(',').map(x => x.trim()).filter(x => x !== "");
             db.ref('ruleta').set({ premios: p, estado: 'parado', anguloFinal: 0 });
+            alert("Lista actualizada para todos.");
         }
 
         function lanzarGiroSincronizado() {
             if (prompt(_0x4f2a[1]) === _0x4f2a[0]) {
-                const vueltasBase = (Math.floor(Math.random() * 5) + 5) * 2 * Math.PI;
-                const anguloMeta = Math.random() * 2 * Math.PI + vueltasBase;
+                // El que presiona el botón decide el destino para TODOS
+                const vueltasExtras = (Math.floor(Math.random() * 5) + 5) * 2 * Math.PI;
+                const anguloDestino = Math.random() * 2 * Math.PI + vueltasExtras;
+                
                 db.ref('ruleta').update({
                     estado: 'girando',
-                    anguloFinal: anguloMeta,
+                    anguloFinal: anguloDestino, // Este ángulo es el mismo para todos
                     trigger: Math.random().toString(36),
                     timestamp: Date.now()
                 });
+            } else {
+                alert("Clave incorrecta");
             }
         }
 
@@ -129,27 +135,35 @@
         function ejecutarGiro(anguloMeta, inicioT) {
             const duracion = 5000;
             let ultimoTick = -1;
-            document.getElementById('resultado').innerText = "🎰 ¡Girando!";
+            const inicioAngulo = anguloActual; 
 
             function animar() {
                 let progreso = (Date.now() - inicioT) / duracion;
                 if (progreso > 1) progreso = 1;
+                
+                // Efecto de frenado suave
                 const suavizado = 1 - Math.pow(1 - progreso, 4);
-                const angMostrado = anguloActual + (anguloMeta * suavizado);
+                const angMostrado = inicioAngulo + (anguloMeta * suavizado);
                 dibujar(angMostrado);
 
+                // Sonido de clic
                 const ind = Math.floor((angMostrado % (2 * Math.PI)) / ((2 * Math.PI)/premios.length));
                 if (ind !== ultimoTick) { playTick(); ultimoTick = ind; }
 
-                if (progreso < 1) requestAnimationFrame(animar);
-                else {
-                    const final = angMostrado % (2 * Math.PI);
+                if (progreso < 1) {
+                    requestAnimationFrame(animar);
+                } else {
+                    // Cálculo del ganador idéntico en todos los dispositivos
+                    const anguloFinalRelativo = angMostrado % (2 * Math.PI);
                     const n = premios.length;
-                    const idx = Math.floor((2 * Math.PI - (final % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
+                    const sectorv = (2 * Math.PI) / n;
+                    // Ajuste de desfase para la flecha superior (1.5 * PI)
+                    const idx = Math.floor((2 * Math.PI - (anguloFinalRelativo % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / sectorv);
+                    
                     const ganador = premios[idx];
                     document.getElementById('resultado').innerText = "🏆 ¡GANADOR: " + ganador + "!";
                     hablar("El ganador es " + ganador);
-                    anguloActual = final;
+                    anguloActual = angMostrado;
                 }
             }
             animar();
