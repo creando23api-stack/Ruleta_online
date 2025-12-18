@@ -28,7 +28,7 @@
     <div class="wrapper">
         <div class="controls" id="adminPanel">
             <h3 style="text-align:center">⚙️ Ajustes</h3>
-            <textarea id="listaPremios">Premio 1, Premio 2, Premio 3, Premio 4, Premio 5</textarea>
+            <textarea id="listaPremios">Premio 1, Premio 2, Premio 3, Premio 4</textarea>
             <button onclick="actualizarDB()">Sincronizar Lista</button>
             <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
             <button class="btn-spin" id="spinBtn" onclick="lanzarGiroSincronizado()">¡GIRAR! 🔐</button>
@@ -58,6 +58,7 @@
         const db = firebase.database();
         const canvas = document.getElementById('ruleta');
         const ctx = canvas.getContext('2d');
+        const txtArea = document.getElementById('listaPremios');
         let premios = [];
         let anguloActual = 0;
         const colores = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#1abc9c", "#e67e22"];
@@ -85,24 +86,26 @@
             if (data && data.premios) {
                 premios = data.premios;
                 
+                // SINCRONIZAR EL TEXTAREA: 
+                // Convierte el array de premios en texto separado por comas para todos
+                txtArea.value = premios.join(', ');
+
                 if (data.estado === 'girando' && data.trigger !== window.lastTrigger) {
                     window.lastTrigger = data.trigger;
                     ejecutarGiro(data.anguloFinal, data.timestamp);
                 } 
                 else if (data.estado === 'parado') {
-                    // Si el estado es parado, reseteamos el texto y dibujamos la ruleta
                     anguloActual = data.anguloFinal || 0;
-                    document.getElementById('resultado').innerText = "Lista actualizada";
+                    document.getElementById('resultado').innerText = "Lista sincronizada";
                     dibujar(anguloActual);
                 }
             }
         });
 
         function actualizarDB() {
-            const p = document.getElementById('listaPremios').value.split(',').map(x => x.trim()).filter(x => x !== "");
+            const p = txtArea.value.split(',').map(x => x.trim()).filter(x => x !== "");
             if (p.length === 0) return alert("Escribe algunos premios");
 
-            // Enviamos 'parado' y anguloFinal 0 para que todos los dispositivos reseteen su vista
             db.ref('ruleta').set({ 
                 premios: p, 
                 estado: 'parado', 
@@ -115,7 +118,6 @@
             if (prompt(_0x4f2a[1]) === _0x4f2a[0]) {
                 const vueltasExtras = (Math.floor(Math.random() * 5) + 5) * 2 * Math.PI;
                 const anguloDestino = Math.random() * 2 * Math.PI + vueltasExtras;
-                
                 db.ref('ruleta').update({
                     estado: 'girando',
                     anguloFinal: anguloDestino,
