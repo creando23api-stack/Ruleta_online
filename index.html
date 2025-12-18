@@ -3,33 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta Privada Segura</title>
+    <title>Ruleta Pro Final</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #121212; color: #e0e0e0; padding: 20px; }
-        .main-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; margin-top: 20px; }
-        .controls { background: #1e1e1e; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        #canvas-container { position: relative; }
-        .arrow { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ff4757; z-index: 10; }
-        canvas { border: 8px solid #222; border-radius: 50%; background: white; }
-        textarea { width: 100%; height: 120px; margin: 15px 0; border-radius: 8px; border: none; padding: 10px; background: #333; color: white; font-size: 14px; resize: none; outline: none; }
-        button { width: 100%; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; transition: 0.2s; }
-        .btn-update { background: #444; color: #bbb; margin-bottom: 10px; border: 1px solid #555; }
-        .btn-spin { background: #e67e22; color: white; font-size: 1.3em; box-shadow: 0 4px 0 #d35400; }
-        .btn-spin:active { transform: translateY(2px); box-shadow: 0 2px 0 #d35400; }
-        #resultado { margin-top: 20px; font-size: 1.5em; font-weight: bold; color: #f1c40f; text-align: center; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #121212; 
+            color: #e0e0e0; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        /* Disposición Horizontal */
+        .wrapper {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 40px;
+            padding: 20px;
+        }
+
+        .controls { 
+            background: #1e1e1e; 
+            padding: 25px; 
+            border-radius: 15px; 
+            border: 1px solid #333; 
+            width: 300px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #canvas-container { position: relative; display: flex; flex-direction: column; align-items: center; }
+        
+        .arrow { 
+            width: 0; height: 0; 
+            border-left: 20px solid transparent; 
+            border-right: 20px solid transparent; 
+            border-top: 40px solid #ff4757; 
+            margin-bottom: -10px; 
+            z-index: 10; 
+        }
+
+        canvas { 
+            border: 8px solid #222; 
+            border-radius: 50%; 
+            background: white; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.6); 
+        }
+
+        textarea { 
+            width: 92%; height: 80px; 
+            margin: 10px 0; border-radius: 8px; 
+            border: none; padding: 10px; 
+            background: #333; color: white; resize: none;
+        }
+
+        button { 
+            width: 100%; padding: 15px; 
+            cursor: pointer; border: none; 
+            border-radius: 8px; font-weight: bold; 
+            margin-top: 10px; 
+        }
+
+        .btn-update { background: #444; color: #bbb; }
+        .btn-spin { background: #e67e22; color: white; font-size: 1.2em; box-shadow: 0 4px 0 #d35400; }
+        .btn-spin:active { transform: translateY(4px); box-shadow: 0 0px 0 #d35400; }
+
+        #resultado { 
+            margin-top: 20px; font-size: 1.5em; 
+            font-weight: bold; color: #f1c40f; text-align: center; 
+        }
+
+        /* Estilo Confeti */
+        .confetti { position: absolute; width: 8px; height: 8px; z-index: 100; pointer-events: none; border-radius: 2px; }
+
+        @media (max-width: 850px) { .wrapper { flex-direction: column; } }
     </style>
 </head>
 <body>
-    <h1>🎡 Ruleta con Acceso Seguro</h1>
-    <div class="main-container">
+
+    <div class="wrapper">
         <div class="controls">
-            <h3>📝 Premios</h3>
+            <h3 style="margin:0">📝 Premios</h3>
             <textarea id="listaPremios">Pizza, Tacos, Sushi, Cine, Regalo, Helado</textarea>
             <button class="btn-update" onclick="actualizar()">Actualizar Ruleta</button>
-            <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+            <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
             <button class="btn-spin" id="spinBtn" onclick="verificarGiro()">GIRAR 🔐</button>
-            <div id="resultado">Introduce la clave para girar</div>
+            <div id="resultado">Introduce clave</div>
         </div>
+
         <div id="canvas-container">
             <div class="arrow"></div>
             <canvas id="ruleta" width="450" height="450"></canvas>
@@ -37,9 +100,8 @@
     </div>
 
     <script>
-        // Clave "premio" ofuscada
-        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x20\x6d\x61\x65\x73\x74\x72\x61\x3a"];
-        
+        // Clave "premio"
+        const _0x1a2b = ["\x70\x72\x65\x6d\x69\x6f", "\x43\x6c\x61\x76\x65\x3a"];
         const canvas = document.getElementById('ruleta');
         const ctx = canvas.getContext('2d');
         let premios = [];
@@ -47,23 +109,64 @@
         const colores = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#1abc9c", "#e67e22", "#34495e"];
         
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Sonido de giro (Tick)
         function playTick() {
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = 'sine'; o.frequency.setValueAtTime(500, audioCtx.currentTime);
-            g.gain.setValueAtTime(0.04, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            o.type = 'sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
             o.connect(g); g.connect(audioCtx.destination);
-            o.start(); o.stop(audioCtx.currentTime + 0.05);
+            o.start(); o.stop(audioCtx.currentTime + 0.1);
         }
 
-        // ESTA FUNCIÓN ES LA QUE BLOQUEA EL GIRO
-        function verificarGiro() {
-            const intento = prompt(_0x1a2b[1]);
-            if (intento === _0x1a2b[0]) {
-                iniciarGiro();
-            } else {
-                alert("❌ Clave incorrecta. Solo el administrador puede girar.");
+        // Sonido de victoria
+        function sonidoVictoria() {
+            const notes = [523, 659, 783, 1046];
+            notes.forEach((f, i) => {
+                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.15);
+                g.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.15);
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.4);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(audioCtx.currentTime + i * 0.15); o.stop(audioCtx.currentTime + i * 0.15 + 0.4);
+            });
+        }
+
+        // Confeti sin óvalos blancos
+        function explosionConfeti() {
+            const container = document.getElementById('canvas-container');
+            for (let i = 0; i < 80; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                c.style.left = '50%'; c.style.top = '50%';
+                container.appendChild(c);
+
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 100 + Math.random() * 200;
+                const x = Math.cos(angle) * dist;
+                const y = Math.sin(angle) * dist;
+
+                c.animate([
+                    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                    { transform: `translate(${x}px, ${y}px) rotate(${Math.random()*360}deg) scale(0)`, opacity: 0 }
+                ], { duration: 2000, easing: 'ease-out' }).onfinish = () => c.remove();
             }
+        }
+
+        function hablar(t) {
+            window.speechSynthesis.cancel();
+            const m = new SpeechSynthesisUtterance(t);
+            m.lang = 'es-ES'; window.speechSynthesis.speak(m);
+        }
+
+        function verificarGiro() {
+            const p = prompt(_0x1a2b[1]);
+            if (p === _0x1a2b[0]) {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                iniciarGiro();
+            } else { alert("Clave incorrecta"); }
         }
 
         function actualizar() {
@@ -79,21 +182,19 @@
                 const ang = i * a + o;
                 ctx.beginPath(); ctx.fillStyle = colores[i % colores.length];
                 ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, ang, ang + a); ctx.fill();
-                ctx.strokeStyle = "#222"; ctx.stroke();
+                ctx.strokeStyle = "#222"; ctx.lineWidth = 2; ctx.stroke();
                 ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang + a / 2);
                 ctx.textAlign = "right"; ctx.fillStyle = "white";
-                ctx.font = "bold 15px Arial"; ctx.fillText(p, r - 30, 5); ctx.restore();
+                ctx.font = "bold 16px Arial"; ctx.fillText(p, r - 30, 5); ctx.restore();
             });
         }
 
         function iniciarGiro() {
-            if (premios.length < 2) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
             document.getElementById('resultado').innerText = "🌀 ¡Girando!";
             const extra = Math.random() * 5000 + 5000;
-            const tiempo = 6000;
+            const tiempo = 5000;
             const inicio = performance.now();
             let ultimoTick = -1;
 
@@ -103,14 +204,23 @@
                 const easeOut = 1 - Math.pow(1 - progreso, 4);
                 const angTotal = anguloActual + extra * easeOut;
                 dibujar(angTotal);
+
+                // Sonido de Tick durante el giro
                 const n = premios.length;
                 const ind = Math.floor((angTotal % (2 * Math.PI)) / ((2 * Math.PI)/n));
                 if (ind !== ultimoTick) { playTick(); ultimoTick = ind; }
-                if (progreso < 1) { requestAnimationFrame(animar); } else {
+
+                if (progreso < 1) { requestAnimationFrame(animar); } 
+                else {
                     anguloActual = angTotal % (2 * Math.PI);
                     btn.disabled = false;
-                    const final = Math.floor((2 * Math.PI - (anguloActual % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
-                    document.getElementById('resultado').innerText = "🎉 GANASTE: " + premios[final];
+                    const finalIdx = Math.floor((2 * Math.PI - (anguloActual % (2 * Math.PI)) + (1.5 * Math.PI)) % (2 * Math.PI) / ((2 * Math.PI)/n));
+                    const ganador = premios[finalIdx];
+                    document.getElementById('resultado').innerText = "🎉 ¡" + ganador + "!";
+                    
+                    explosionConfeti();
+                    sonidoVictoria();
+                    hablar("¡Felicidades! Ganaste " + ganador);
                 }
             }
             requestAnimationFrame(animar);
